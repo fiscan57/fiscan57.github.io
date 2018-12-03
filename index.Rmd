@@ -1,0 +1,61 @@
+---
+title: "Fundamentals of Computing and Data Display"
+author: "Christoph Kern"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    code_folding: show
+    df_print: kable
+    highlight: textmate
+    theme: simplex
+    toc: yes
+subtitle: R Markdown and LaTeX
+bibliography: rmarkdown.bib
+---
+
+```{r, include = FALSE}
+library(knitr)
+library(RSocrata)
+library(tidyverse)
+```
+
+## Data
+***
+This notebook exemplifies some features of R Markdown [@Xie2018]. We use the [Detroit crime data](https://dev.socrata.com/foundry/data.detroitmi.gov/9i6z-cm98) as our example data set. Note that this code chunk utilize caching, i.e. the actual API query will be executed only once.
+
+```{r, cache = TRUE}
+url <- "https://data.detroitmi.gov/resource/9i6z-cm98.json?$where="
+d18 <- read.socrata(paste0(url,"incident_timestamp between '2018-01-01' and '2018-07-01'"))
+```
+
+Data tables can be formatted in different styles. We use the `knitr::kable` function as an option in the YAML header of this document.
+
+```{r}
+d18$hour_of_day <- as.numeric(d18$hour_of_day)
+d18[1:5, 1:5]
+```
+
+## Example code
+***
+Inline code can be used to directly display code results in the text. For example, the number of crime incidents in our data is `r nrow(d18)`.
+
+There are a number of chunk options to control the layout of figures. In addition, we can hide the code itself with `echo = FALSE`.
+
+```{r, echo = FALSE, message = FALSE, fig.align = "center", fig.cap = "Crime in Detroit", out.width = "55%"}
+d18 %>%
+  separate(incident_timestamp, c("date", "time"), sep = " ") %>%
+  filter(as.Date(date) < "2018-07-01") %>%
+  group_by(date) %>%
+  summarise(total = n()) %>%
+  ggplot() +
+  geom_line(aes(x = as.Date(date), y = total)) +
+  geom_smooth(aes(x = as.Date(date), y = total)) +
+  ylim(0, 400) +
+  labs(x = "Date", 
+       y = "Total") +
+  theme_light()
+```
+
+## References
